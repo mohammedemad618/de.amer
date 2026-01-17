@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { requireAdmin } from '@/lib/auth/guards'
 import { verifyCsrf } from '@/lib/security/csrf'
 
@@ -42,27 +42,56 @@ export async function PUT(
     }
 
     const data = parsed.data
-    const lesson = await prisma.lesson.update({
-      where: { id },
-      data: {
-        ...(data.title && { title: data.title }),
-        ...(data.description && { description: data.description }),
-        ...(data.content && { content: data.content }),
-        ...(data.order !== undefined && { order: data.order }),
-        ...(data.duration !== undefined && { duration: data.duration }),
-        ...(data.videoUrl !== undefined && { videoUrl: data.videoUrl || null }),
-        ...(data.resources !== undefined && { resources: data.resources || null })
-      }
-    })
+    const now = new Date()
+    
+    // التحقق من وجود الدرس أولاً
+    const existingResults = await sql`
+      SELECT * FROM lessons 
+      WHERE id = ${id}
+      LIMIT 1
+    `
+    const existing = getFirst(existingResults)
+    
+    if (!existing) {
+      return NextResponse.json({ message: 'الدرس غير موجود.' }, { status: 404 })
+    }
+    
+    // بناء SQL UPDATE ديناميكياً باستخدام template literals
+    let updateQuery = sql`UPDATE lessons SET `
+    
+    if (data.title) {
+      updateQuery = sql`${updateQuery} title = ${data.title}, `
+    }
+    if (data.description) {
+      updateQuery = sql`${updateQuery} description = ${data.description}, `
+    }
+    if (data.content) {
+      updateQuery = sql`${updateQuery} content = ${data.content}, `
+    }
+    if (data.order !== undefined) {
+      updateQuery = sql`${updateQuery} "order" = ${data.order}, `
+    }
+    if (data.duration !== undefined) {
+      updateQuery = sql`${updateQuery} duration = ${data.duration}, `
+    }
+    if (data.videoUrl !== undefined) {
+      updateQuery = sql`${updateQuery} "videoUrl" = ${data.videoUrl || null}, `
+    }
+    if (data.resources !== undefined) {
+      updateQuery = sql`${updateQuery} resources = ${data.resources || null}, `
+    }
+    
+    updateQuery = sql`${updateQuery} "updatedAt" = ${now} WHERE id = ${id} RETURNING *`
+    
+    const lessonResults = await updateQuery
+    const lesson = getFirst(lessonResults)
 
     return NextResponse.json({ lesson, message: 'تم تحديث الدرس بنجاح.' })
   } catch (error) {
     if (error instanceof Error && error.message.includes('Unauthorized')) {
       return NextResponse.json({ message: 'غير مصرح لك بالوصول إلى هذه الصفحة.' }, { status: 403 })
     }
-    if (error instanceof Error && error.message.includes('Record to update does not exist')) {
-      return NextResponse.json({ message: 'الدرس غير موجود.' }, { status: 404 })
-    }
+    // يتم التحقق من وجود الدرس قبل التحديث
     console.error('خطأ في تحديث الدرس:', error)
     return NextResponse.json({ message: 'حدث خطأ أثناء تحديث الدرس.' }, { status: 500 })
   }
@@ -85,18 +114,17 @@ export async function DELETE(
     }
 
     const { id } = await params
-    await prisma.lesson.delete({
-      where: { id }
-    })
+    await sql`
+      DELETE FROM lessons 
+      WHERE id = ${id}
+    `
 
     return NextResponse.json({ message: 'تم حذف الدرس بنجاح.' })
   } catch (error) {
     if (error instanceof Error && error.message.includes('Unauthorized')) {
       return NextResponse.json({ message: 'غير مصرح لك بالوصول إلى هذه الصفحة.' }, { status: 403 })
     }
-    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
-      return NextResponse.json({ message: 'الدرس غير موجود.' }, { status: 404 })
-    }
+    // في SQL، إذا لم يتم حذف أي صف، لا يوجد خطأ
     console.error('خطأ في حذف الدرس:', error)
     return NextResponse.json({ message: 'حدث خطأ أثناء حذف الدرس.' }, { status: 500 })
   }

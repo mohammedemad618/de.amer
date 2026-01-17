@@ -15,22 +15,32 @@ export default async function AdminDashboardPage() {
     redirect('/auth/login')
   }
 
-  const [totalCourses, totalUsers, totalEnrollments, recentCourses] = await Promise.all([
-    prisma.course.count(),
-    prisma.user.count(),
-    prisma.enrollment.count(),
-    prisma.course.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        enrollments: {
-          select: {
-            id: true
-          }
-        }
-      }
-    })
+  const [totalCoursesResult, totalUsersResult, totalEnrollmentsResult, recentCoursesResults] = await Promise.all([
+    sql`SELECT COUNT(*) as count FROM courses`,
+    sql`SELECT COUNT(*) as count FROM users`,
+    sql`SELECT COUNT(*) as count FROM enrollments`,
+    sql`
+      SELECT 
+        c.*,
+        COALESCE(
+          json_agg(e.id) FILTER (WHERE e.id IS NOT NULL),
+          '[]'::json
+        ) as enrollments
+      FROM courses c
+      LEFT JOIN enrollments e ON c.id = e."courseId"
+      GROUP BY c.id
+      ORDER BY c."createdAt" DESC
+      LIMIT 5
+    `
   ])
+
+  const totalCourses = parseInt((totalCoursesResult[0] as any)?.count || '0')
+  const totalUsers = parseInt((totalUsersResult[0] as any)?.count || '0')
+  const totalEnrollments = parseInt((totalEnrollmentsResult[0] as any)?.count || '0')
+  const recentCourses = (recentCoursesResults as any[]).map((course: any) => ({
+    ...course,
+    enrollments: Array.isArray(course.enrollments) ? course.enrollments.map((id: string) => ({ id })) : []
+  }))
 
   return (
     <div className='space-y-8 pb-16'>

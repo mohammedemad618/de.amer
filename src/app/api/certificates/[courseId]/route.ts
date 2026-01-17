@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import crypto from 'crypto'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { getSessionUser } from '@/lib/auth/guards'
 
 export async function GET(_request: NextRequest, context: { params: Promise<{ courseId: string }> }) {
@@ -11,10 +11,26 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ co
     return NextResponse.json({ message: 'غير مصرح.' }, { status: 401 })
   }
 
-  let enrollment = await prisma.enrollment.findUnique({
-    where: { userId_courseId: { userId: session.id, courseId } },
-    include: { course: true, user: true }
-  })
+  const enrollmentResults = await sql`
+    SELECT 
+      e.*,
+      json_build_object(
+        'id', c.id,
+        'title', c.title,
+        'category', c.category
+      ) as course,
+      json_build_object(
+        'id', u.id,
+        'name', u.name,
+        'email', u.email
+      ) as user
+    FROM enrollments e
+    JOIN courses c ON e."courseId" = c.id
+    JOIN users u ON e."userId" = u.id
+    WHERE e."userId" = ${session.id} AND e."courseId" = ${courseId}
+    LIMIT 1
+  `
+  let enrollment = getFirst(enrollmentResults)
 
   if (!enrollment || enrollment.status !== 'COMPLETED') {
     return NextResponse.json({ message: 'غير مؤهل للشهادة.' }, { status: 403 })
@@ -22,14 +38,37 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ co
 
   const certificateId = enrollment.certificateId ?? crypto.randomUUID()
   if (!enrollment.certificateId) {
-    enrollment = await prisma.enrollment.update({
-      where: { id: enrollment.id },
-      data: {
-        certificateId,
-        certificateUrl: enrollment.certificateUrl ?? `/api/certificates/${courseId}`
-      },
-      include: { course: true, user: true }
-    })
+    const updatedResults = await sql`
+      UPDATE enrollments 
+      SET "certificateId" = ${certificateId},
+          "certificateUrl" = ${enrollment.certificateUrl ?? `/api/certificates/${courseId}`},
+          "updatedAt" = ${new Date()}
+      WHERE id = ${enrollment.id}
+      RETURNING *
+    `
+    enrollment = getFirst(updatedResults)
+    
+    // إعادة جلب البيانات مع العلاقات
+    const fullEnrollmentResults = await sql`
+      SELECT 
+        e.*,
+        json_build_object(
+          'id', c.id,
+          'title', c.title,
+          'category', c.category
+        ) as course,
+        json_build_object(
+          'id', u.id,
+          'name', u.name,
+          'email', u.email
+        ) as user
+      FROM enrollments e
+      JOIN courses c ON e."courseId" = c.id
+      JOIN users u ON e."userId" = u.id
+      WHERE e.id = ${enrollment.id}
+      LIMIT 1
+    `
+    enrollment = getFirst(fullEnrollmentResults)
   }
 
   const pdfDoc = await PDFDocument.create()

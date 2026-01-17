@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { requireAdmin } from '@/lib/auth/guards'
 import { verifyCsrf } from '@/lib/security/csrf'
 
@@ -12,9 +12,12 @@ export async function GET(
     await requireAdmin()
 
     const { key } = await params
-    const setting = await prisma.systemSettings.findUnique({
-      where: { key }
-    })
+    const results = await sql`
+      SELECT * FROM systemsettings 
+      WHERE key = ${key}
+      LIMIT 1
+    `
+    const setting = getFirst(results)
 
     if (!setting) {
       return NextResponse.json({ message: 'الإعداد غير موجود.' }, { status: 404 })
@@ -61,18 +64,17 @@ export async function DELETE(
     }
 
     const { key } = await params
-    await prisma.systemSettings.delete({
-      where: { key }
-    })
+    await sql`
+      DELETE FROM systemsettings 
+      WHERE key = ${key}
+    `
 
     return NextResponse.json({ message: 'تم حذف الإعداد بنجاح.' })
   } catch (error) {
     if (error instanceof Error && error.message.includes('Unauthorized')) {
       return NextResponse.json({ message: 'غير مصرح لك بالوصول إلى هذه الصفحة.' }, { status: 403 })
     }
-    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
-      return NextResponse.json({ message: 'الإعداد غير موجود.' }, { status: 404 })
-    }
+    // في SQL، إذا لم يتم حذف أي صف، لا يوجد خطأ - نتحقق من ذلك يدوياً إذا لزم الأمر
     console.error('خطأ في حذف الإعداد:', error)
     return NextResponse.json({ message: 'حدث خطأ أثناء حذف الإعداد.' }, { status: 500 })
   }

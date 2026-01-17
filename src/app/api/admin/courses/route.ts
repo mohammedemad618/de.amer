@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { requireAdmin } from '@/lib/auth/guards'
 import { verifyCsrf } from '@/lib/security/csrf'
 
@@ -23,18 +23,24 @@ export async function GET() {
   try {
     await requireAdmin()
 
-    const courses = await prisma.course.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        enrollments: {
-          select: {
-            id: true,
-            status: true,
-            progressPercent: true
-          }
-        }
-      }
-    })
+    const courses = await sql`
+      SELECT 
+        c.*,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', e.id,
+              'status', e.status,
+              'progressPercent', e."progressPercent"
+            )
+          ) FILTER (WHERE e.id IS NOT NULL),
+          '[]'::json
+        ) as enrollments
+      FROM courses c
+      LEFT JOIN enrollments e ON c.id = e."courseId"
+      GROUP BY c.id
+      ORDER BY c."createdAt" DESC
+    `
 
     return NextResponse.json({ courses })
   } catch (error) {
@@ -70,19 +76,26 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data
-    const course = await prisma.course.create({
-      data: {
-        title: data.title,
-        category: data.category,
-        description: data.description,
-        objectives: data.objectives,
-        hours: data.hours,
-        price: data.price,
-        level: data.level,
-        thumbnail: data.thumbnail,
-        meetingLink: data.meetingLink || null
-      }
-    })
+    const now = new Date()
+    const courseResults = await sql`
+      INSERT INTO courses (id, title, category, description, objectives, hours, price, level, thumbnail, "meetingLink", "createdAt", "updatedAt")
+      VALUES (
+        gen_random_uuid(),
+        ${data.title},
+        ${data.category},
+        ${data.description},
+        ${data.objectives},
+        ${data.hours},
+        ${data.price},
+        ${data.level},
+        ${data.thumbnail},
+        ${data.meetingLink || null},
+        ${now},
+        ${now}
+      )
+      RETURNING *
+    `
+    const course = getFirst(courseResults)
 
     return NextResponse.json({ course, message: 'تم إنشاء الدورة بنجاح.' }, { status: 201 })
   } catch (error) {

@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { getSessionUser } from '@/lib/auth/guards'
 import { verifyCsrf } from '@/lib/security/csrf'
 
@@ -24,27 +24,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'بيانات غير صالحة.' }, { status: 400 })
   }
 
-  const course = await prisma.course.findUnique({ where: { id: parsed.data.courseId } })
+  const courseResults = await sql`
+    SELECT * FROM courses 
+    WHERE id = ${parsed.data.courseId}
+    LIMIT 1
+  `
+  const course = getFirst(courseResults)
   if (!course) {
     return NextResponse.json({ message: 'الدورة غير موجودة.' }, { status: 404 })
   }
 
-  const existing = await prisma.enrollment.findUnique({
-    where: { userId_courseId: { userId: session.id, courseId: course.id } }
-  })
+  const existingResults = await sql`
+    SELECT * FROM enrollments 
+    WHERE "userId" = ${session.id} AND "courseId" = ${parsed.data.courseId}
+    LIMIT 1
+  `
+  const existing = getFirst(existingResults)
 
   if (existing) {
     return NextResponse.json({ enrollment: existing })
   }
 
-  const enrollment = await prisma.enrollment.create({
-    data: {
-      userId: session.id,
-      courseId: course.id,
-      status: 'ACTIVE',
-      progressPercent: 0
-    }
-  })
+  const now = new Date()
+  const enrollmentResults = await sql`
+    INSERT INTO enrollments (id, "userId", "courseId", status, "progressPercent", "createdAt", "updatedAt")
+    VALUES (gen_random_uuid(), ${session.id}, ${parsed.data.courseId}, 'ACTIVE', 0, ${now}, ${now})
+    RETURNING *
+  `
+  const enrollment = getFirst(enrollmentResults)
 
   return NextResponse.json({ enrollment })
 }

@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { getSessionUser } from '@/lib/auth/guards'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -70,12 +70,13 @@ function parseObjectives(value: string) {
 }
 
 export default async function CourseDetailsPage({ params }: { params: { id: string } }) {
-  const [session, course, defaultCurrency] = await Promise.all([
+  const [session, courseResults, defaultCurrency] = await Promise.all([
     getSessionUser(),
-    prisma.course.findUnique({ where: { id: params.id } }),
+    sql`SELECT * FROM courses WHERE id = ${params.id} LIMIT 1`,
     getSetting('default_currency', 'USD') as Promise<string>
   ])
 
+  const course = getFirst(courseResults as any[])
   if (!course) {
     notFound()
   }
@@ -83,9 +84,12 @@ export default async function CourseDetailsPage({ params }: { params: { id: stri
   // التحقق من أن المستخدم مسجل في الدورة
   let enrollment = null
   if (session) {
-    enrollment = await prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId: session.id, courseId: course.id } }
-    })
+    const enrollmentResults = await sql`
+      SELECT * FROM enrollments 
+      WHERE "userId" = ${session.id} AND "courseId" = ${course.id}
+      LIMIT 1
+    `
+    enrollment = getFirst(enrollmentResults as any[])
   }
 
   const currency = (defaultCurrency === 'USD' || defaultCurrency === 'SYP' || defaultCurrency === 'EUR'

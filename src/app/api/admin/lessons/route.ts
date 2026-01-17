@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { requireAdmin } from '@/lib/auth/guards'
 import { verifyCsrf } from '@/lib/security/csrf'
 
@@ -27,10 +27,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'معرف الدورة مطلوب.' }, { status: 400 })
     }
 
-    const lessons = await prisma.lesson.findMany({
-      where: { courseId },
-      orderBy: { order: 'asc' }
-    })
+    const lessons = await sql`
+      SELECT * FROM lessons 
+      WHERE "courseId" = ${courseId}
+      ORDER BY "order" ASC
+    `
 
     return NextResponse.json({ lessons })
   } catch (error) {
@@ -66,26 +67,36 @@ export async function POST(request: Request) {
     }
 
     // التحقق من وجود الدورة
-    const course = await prisma.course.findUnique({
-      where: { id: parsed.data.courseId }
-    })
+    const courseResults = await sql`
+      SELECT * FROM courses 
+      WHERE id = ${parsed.data.courseId}
+      LIMIT 1
+    `
+    const course = getFirst(courseResults)
 
     if (!course) {
       return NextResponse.json({ message: 'الدورة غير موجودة.' }, { status: 404 })
     }
 
-    const lesson = await prisma.lesson.create({
-      data: {
-        courseId: parsed.data.courseId,
-        title: parsed.data.title,
-        description: parsed.data.description,
-        content: parsed.data.content,
-        order: parsed.data.order,
-        duration: parsed.data.duration || null,
-        videoUrl: parsed.data.videoUrl || null,
-        resources: parsed.data.resources || null
-      }
-    })
+    const now = new Date()
+    const lessonResults = await sql`
+      INSERT INTO lessons (id, "courseId", title, description, content, "order", duration, "videoUrl", resources, "createdAt", "updatedAt")
+      VALUES (
+        gen_random_uuid(),
+        ${parsed.data.courseId},
+        ${parsed.data.title},
+        ${parsed.data.description},
+        ${parsed.data.content},
+        ${parsed.data.order},
+        ${parsed.data.duration || null},
+        ${parsed.data.videoUrl || null},
+        ${parsed.data.resources || null},
+        ${now},
+        ${now}
+      )
+      RETURNING *
+    `
+    const lesson = getFirst(lessonResults)
 
     return NextResponse.json({ lesson, message: 'تم إنشاء الدرس بنجاح.' }, { status: 201 })
   } catch (error) {

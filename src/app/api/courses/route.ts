@@ -1,5 +1,5 @@
 ﻿import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db/prisma'
+import { sql } from '@/lib/db/neon'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -11,39 +11,43 @@ export async function GET(request: Request) {
   const hoursMin = searchParams.get('hoursMin')
   const hoursMax = searchParams.get('hoursMax')
 
-  const priceFilter: { gte?: number; lte?: number; equals?: number; gt?: number } = {}
+  // بناء SQL query ديناميكياً
+  let query = sql`SELECT * FROM courses WHERE 1=1`
+  const conditions: any[] = []
+
+  if (category) {
+    query = sql`${query} AND category ILIKE ${'%' + category + '%'}`
+  }
+
+  if (level) {
+    query = sql`${query} AND level = ${level.toUpperCase()}`
+  }
 
   if (priceType === 'free') {
-    priceFilter.equals = 0
+    query = sql`${query} AND price = 0`
   } else if (priceType === 'paid') {
-    priceFilter.gt = 0
+    query = sql`${query} AND price > 0`
   }
 
   if (priceMin) {
-    priceFilter.gte = Number(priceMin)
+    query = sql`${query} AND price >= ${Number(priceMin)}`
   }
 
   if (priceMax) {
-    priceFilter.lte = Number(priceMax)
+    query = sql`${query} AND price <= ${Number(priceMax)}`
   }
 
-  const courses = await prisma.course.findMany({
-    where: {
-      ...(category ? { category: { contains: category } } : {}),
-      ...(level ? { level: level.toUpperCase() } : {}),
-      ...(Object.keys(priceFilter).length ? { price: priceFilter } : {}),
-      ...(hoursMin || hoursMax
-        ? {
-            hours: {
-              ...(hoursMin ? { gte: Number(hoursMin) } : {}),
-              ...(hoursMax ? { lte: Number(hoursMax) } : {})
-            }
-          }
-        : {})
-    },
-    orderBy: { createdAt: 'desc' }
-  })
+  if (hoursMin) {
+    query = sql`${query} AND hours >= ${Number(hoursMin)}`
+  }
 
+  if (hoursMax) {
+    query = sql`${query} AND hours <= ${Number(hoursMax)}`
+  }
+
+  query = sql`${query} ORDER BY "createdAt" DESC`
+
+  const courses = await query
   return NextResponse.json({ courses })
 }
 

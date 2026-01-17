@@ -1,9 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 
 export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params
-  const course = await prisma.course.findUnique({ where: { id } })
+  const results = await sql`
+    SELECT * FROM courses 
+    WHERE id = ${id}
+    LIMIT 1
+  `
+  const course = getFirst(results)
   if (!course) {
     return NextResponse.json({ message: 'الدورة غير موجودة.' }, { status: 404 })
   }

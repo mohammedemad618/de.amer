@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/guards'
-import { prisma } from '@/lib/db/prisma'
+import { sql } from '@/lib/db/neon'
 import { CoursesAdminClient } from '@/components/admin/courses-admin-client'
 
 export const dynamic = 'force-dynamic'
@@ -12,18 +12,25 @@ export default async function AdminCoursesPage() {
     redirect('/auth/login')
   }
 
-  const courses = await prisma.course.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      enrollments: {
-        select: {
-          id: true,
-          status: true,
-          progressPercent: true
-        }
-      }
-    }
-  })
+  const coursesResults = await sql`
+    SELECT 
+      c.*,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', e.id,
+            'status', e.status,
+            'progressPercent', e."progressPercent"
+          )
+        ) FILTER (WHERE e.id IS NOT NULL),
+        '[]'::json
+      ) as enrollments
+    FROM courses c
+    LEFT JOIN enrollments e ON c.id = e."courseId"
+    GROUP BY c.id
+    ORDER BY c."createdAt" DESC
+  `
+  const courses = coursesResults as any[]
 
   return (
     <div className='space-y-8 pb-16'>

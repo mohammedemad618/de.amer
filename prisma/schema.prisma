@@ -3,17 +3,17 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  id            String         @id @default(uuid())
   name          String
   email         String         @unique
   passwordHash  String
   role          String         @default("USER")
-  createdAt     DateTime       @default(now())
+  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
   enrollments   Enrollment[]
   refreshTokens RefreshToken[]
 
@@ -21,7 +21,7 @@ model User {
 }
 
 model Course {
-  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  id          String       @id @default(uuid())
   title       String
   category    String
   description String
@@ -31,8 +31,8 @@ model Course {
   level       String
   thumbnail   String // مسار الصورة المحلية (مثال: /uploads/courses/course-id.jpg)
   meetingLink String? // رابط Teams أو Meet للدورة
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(6)
   enrollments Enrollment[]
   lessons     Lesson[] // دروس الدورة
 
@@ -40,17 +40,17 @@ model Course {
 }
 
 model Enrollment {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String   @db.ObjectId
-  courseId        String   @db.ObjectId
+  id              String   @id @default(uuid())
+  userId          String
+  courseId        String
   status          String
   progressPercent Int
   certificateId   String?
   certificateUrl  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  user            User     @relation(fields: [userId], references: [id])
-  course          Course   @relation(fields: [courseId], references: [id])
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
   @@map("enrollments")
@@ -58,11 +58,11 @@ model Enrollment {
 
 // جدول لتخزين Refresh Tokens في قاعدة البيانات
 model RefreshToken {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
+  id        String   @id @default(uuid())
+  userId    String
   token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  expiresAt DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -72,22 +72,21 @@ model RefreshToken {
 
 // جدول لتخزين Rate Limiting في قاعدة البيانات
 model RateLimit {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  ip        String
+  id        String   @id @default(uuid())
+  ip        String   @unique
   count     Int      @default(1)
-  resetAt   DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  resetAt   DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
-  @@unique([ip])
   @@index([resetAt])
   @@map("ratelimits")
 }
 
 // جدول الدروس (Lessons)
 model Lesson {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  courseId    String   @db.ObjectId
+  id          String   @id @default(uuid())
+  courseId    String
   title       String
   description String
   content     String // محتوى الدرس (HTML أو Markdown)
@@ -95,8 +94,8 @@ model Lesson {
   duration    Int? // مدة الدرس بالدقائق
   videoUrl    String? // رابط فيديو الدرس (اختياري)
   resources   String? // موارد إضافية (JSON)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
@@ -106,13 +105,13 @@ model Lesson {
 
 // جدول إعدادات النظام
 model SystemSettings {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(uuid())
   key       String   @unique
   value     String
   type      String   @default("string") // string, number, boolean, json
   category  String   @default("general") // general, email, payment, etc.
-  updatedAt DateTime @updatedAt
-  updatedBy String?  @db.ObjectId // ID المستخدم الذي قام بالتحديث
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  updatedBy String?  // ID المستخدم الذي قام بالتحديث
 
   @@index([category])
   @@map("systemsettings")

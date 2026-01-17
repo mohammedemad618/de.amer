@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { requireAdmin } from '@/lib/auth/guards'
 import { verifyCsrf } from '@/lib/security/csrf'
 
@@ -19,10 +19,19 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
 
-    const settings = await prisma.systemSettings.findMany({
-      where: category ? { category } : undefined,
-      orderBy: [{ category: 'asc' }, { key: 'asc' }]
-    })
+    let settings: any[]
+    if (category) {
+      settings = await sql`
+        SELECT * FROM systemsettings 
+        WHERE category = ${category}
+        ORDER BY category ASC, key ASC
+      `
+    } else {
+      settings = await sql`
+        SELECT * FROM systemsettings 
+        ORDER BY category ASC, key ASC
+      `
+    }
 
     // تحويل القيم حسب النوع
     const formattedSettings = settings.map((setting) => {
@@ -86,22 +95,39 @@ export async function POST(request: Request) {
     }
 
     const session = await requireAdmin()
-    const setting = await prisma.systemSettings.upsert({
-      where: { key: parsed.data.key },
-      update: {
-        value: stringValue,
-        type: parsed.data.type,
-        category: parsed.data.category,
-        updatedBy: session.id
-      },
-      create: {
-        key: parsed.data.key,
-        value: stringValue,
-        type: parsed.data.type,
-        category: parsed.data.category,
-        updatedBy: session.id
-      }
-    })
+    const now = new Date()
+    
+    // التحقق من وجود الإعداد
+    const existingResults = await sql`
+      SELECT * FROM systemsettings 
+      WHERE key = ${parsed.data.key}
+      LIMIT 1
+    `
+    const existing = getFirst(existingResults)
+    
+    let setting: any
+    if (existing) {
+      // تحديث الإعداد الموجود
+      const updatedResults = await sql`
+        UPDATE systemsettings 
+        SET value = ${stringValue},
+            type = ${parsed.data.type},
+            category = ${parsed.data.category},
+            "updatedBy" = ${session.id},
+            "updatedAt" = ${now}
+        WHERE key = ${parsed.data.key}
+        RETURNING *
+      `
+      setting = getFirst(updatedResults)
+    } else {
+      // إنشاء إعداد جديد
+      const createdResults = await sql`
+        INSERT INTO systemsettings (id, key, value, type, category, "updatedBy", "updatedAt")
+        VALUES (gen_random_uuid(), ${parsed.data.key}, ${stringValue}, ${parsed.data.type}, ${parsed.data.category}, ${session.id}, ${now})
+        RETURNING *
+      `
+      setting = getFirst(createdResults)
+    }
 
     // تحويل القيمة للعرض
     let parsedValue: any = setting.value

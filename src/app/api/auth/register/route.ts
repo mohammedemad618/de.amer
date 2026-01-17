@@ -1,7 +1,7 @@
 ﻿import { NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
 import { z } from 'zod'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { rateLimit, getClientIp } from '@/lib/security/rateLimit'
 import { verifyCsrf, createCsrfToken, setCsrfCookie } from '@/lib/security/csrf'
 import { signAccessToken, signRefreshToken, getRefreshExpiryMs } from '@/lib/auth/jwt'
@@ -33,20 +33,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'بيانات غير صالحة.' }, { status: 400 })
   }
 
-  const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } })
+  const existingResults = await sql`
+    SELECT * FROM users 
+    WHERE email = ${parsed.data.email}
+    LIMIT 1
+  `
+  const existing = getFirst(existingResults)
   if (existing) {
     return NextResponse.json({ message: 'البريد الإلكتروني مستخدم بالفعل.' }, { status: 409 })
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10)
-  const user = await prisma.user.create({
-    data: {
-      name: parsed.data.name,
-      email: parsed.data.email,
-      passwordHash,
-      role: 'USER'
-    }
-  })
+  const now = new Date()
+  const userResults = await sql`
+    INSERT INTO users (id, name, email, "passwordHash", role, "createdAt")
+    VALUES (gen_random_uuid(), ${parsed.data.name}, ${parsed.data.email}, ${passwordHash}, 'USER', ${now})
+    RETURNING *
+  `
+  const user = getFirst(userResults)
 
   const role = user.role === 'ADMIN' ? 'ADMIN' : 'USER'
   const accessToken = signAccessToken({ sub: user.id, email: user.email, role })

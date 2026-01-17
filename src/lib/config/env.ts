@@ -3,8 +3,9 @@ import crypto from 'crypto'
 
 // Schema للتحقق من متغيرات البيئة المطلوبة (server-side only)
 const serverEnvSchema = z.object({
-  // Database
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  // Database - يدعم DATABASE_URL أو NETLIFY_DATABASE_URL
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL or NETLIFY_DATABASE_URL is required').optional(),
+  NETLIFY_DATABASE_URL: z.string().min(1, 'DATABASE_URL or NETLIFY_DATABASE_URL is required').optional(),
   
   // JWT
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
@@ -15,7 +16,8 @@ const serverEnvSchema = z.object({
 
 // Schema للتطوير: يسمح بإكمال JWT_SECRET تلقائياً لتسهيل التشغيل محلياً
 const serverEnvSchemaDev = z.object({
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required').optional(),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL or NETLIFY_DATABASE_URL is required').optional(),
+  NETLIFY_DATABASE_URL: z.string().min(1, 'DATABASE_URL or NETLIFY_DATABASE_URL is required').optional(),
   JWT_SECRET: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 })
@@ -48,8 +50,8 @@ function validateServerEnv() {
   }
   
   try {
-    // قراءة DATABASE_URL مباشرة من process.env
-    let databaseUrl = process.env.DATABASE_URL
+    // قراءة DATABASE_URL أو NETLIFY_DATABASE_URL من process.env
+    let databaseUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL
     
     // أثناء البناء (NEXT_PHASE === 'phase-production-build')، قد لا يكون DATABASE_URL متاحاً
     // لكن في runtime (production بعد البناء)، DATABASE_URL مطلوب
@@ -58,23 +60,23 @@ function validateServerEnv() {
     if (!databaseUrl && !isBuildPhase) {
       // في runtime (وليس أثناء البناء)، DATABASE_URL مطلوب
       if (process.env.NODE_ENV === 'production') {
-        const errorMsg = 'DATABASE_URL is required. Please add it to your environment variables in Netlify.'
+        const errorMsg = 'DATABASE_URL or NETLIFY_DATABASE_URL is required. Please add it to your environment variables in Netlify.'
         console.error(`❌ ${errorMsg}`)
         throw new Error(errorMsg)
       } else {
-        // في development، نعطي تحذير فقط
-        const errorMsg = 'DATABASE_URL is required. Please add it to your .env file.'
-        console.error(`❌ ${errorMsg}`)
-        throw new Error(errorMsg)
+        // في development، نستخدم قيمة placeholder (لن تعمل لكن لن تكسر التطبيق)
+        console.warn('⚠ DATABASE_URL or NETLIFY_DATABASE_URL is missing in development. Using placeholder. Please add your Neon PostgreSQL connection string to your .env file.')
+        databaseUrl = 'postgresql://placeholder:placeholder@placeholder:5432/placeholder?sslmode=require'
+        process.env.DATABASE_URL = databaseUrl
       }
     }
     
     if (!databaseUrl && isBuildPhase) {
       // أثناء البناء، نستخدم قيمة افتراضية (لن تعمل لكن لن تكسر البناء)
-      // المستخدم يجب أن يضيف DATABASE_URL في Netlify Environment Variables
-      console.warn('⚠ DATABASE_URL is missing during build. Please add it to Netlify Environment Variables.')
+      // المستخدم يجب أن يضيف DATABASE_URL أو NETLIFY_DATABASE_URL في Netlify Environment Variables
+      console.warn('⚠ DATABASE_URL or NETLIFY_DATABASE_URL is missing during build. Please add it to Netlify Environment Variables.')
       // نستخدم قيمة placeholder (لن تعمل لكن لن تكسر البناء)
-      databaseUrl = 'mongodb://placeholder:27017/placeholder'
+      databaseUrl = 'postgresql://placeholder:placeholder@placeholder:5432/placeholder?sslmode=require'
       process.env.DATABASE_URL = databaseUrl
     }
     
@@ -104,7 +106,8 @@ function validateServerEnv() {
     }
 
     return {
-      DATABASE_URL: databaseUrl || 'mongodb://placeholder:27017/placeholder',
+      DATABASE_URL: databaseUrl || 'postgresql://placeholder:placeholder@placeholder:5432/placeholder?sslmode=require',
+      NETLIFY_DATABASE_URL: databaseUrl || 'postgresql://placeholder:placeholder@placeholder:5432/placeholder?sslmode=require',
       JWT_SECRET: jwtSecret,
       NODE_ENV: parsed.NODE_ENV || 'development'
     } as z.infer<typeof serverEnvSchema>

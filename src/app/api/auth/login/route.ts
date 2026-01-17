@@ -1,7 +1,7 @@
 ﻿import { NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
 import { z } from 'zod'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { rateLimit, getClientIp } from '@/lib/security/rateLimit'
 import { verifyCsrf, createCsrfToken, setCsrfCookie } from '@/lib/security/csrf'
 import { signAccessToken, signRefreshToken, getRefreshExpiryMs } from '@/lib/auth/jwt'
@@ -59,13 +59,13 @@ export async function POST(request: Request) {
       )
     }
 
-    // التحقق من جميع المستخدمين أولاً
-    const allUsers = await prisma.user.findMany({
-      select: { email: true, role: true }
-    })
-    console.log('[DEBUG] All users in database:', allUsers)
-    
-    const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
+    // البحث عن المستخدم
+    const userResults = await sql`
+      SELECT * FROM users 
+      WHERE email = ${parsed.data.email}
+      LIMIT 1
+    `
+    const user = getFirst(userResults)
     // #region agent log
     console.log('[DEBUG] User lookup:', { 
       email: parsed.data.email, 

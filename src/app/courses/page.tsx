@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { prisma } from '@/lib/db/prisma'
+import { sql } from '@/lib/db/neon'
 import { CoursesClient } from '@/components/courses/courses-client'
 import type { CourseSummary } from '@/components/courses/course-card'
 import { SectionHeading } from '@/components/ui/section-heading'
@@ -35,10 +35,11 @@ const highlights = [
 ]
 
 export default async function CoursesPage() {
-  const [courses, defaultCurrency] = await Promise.all([
-    prisma.course.findMany({ orderBy: { createdAt: 'desc' } }),
+  const [coursesResults, defaultCurrency] = await Promise.all([
+    sql`SELECT * FROM courses ORDER BY "createdAt" DESC`,
     getSetting('default_currency', 'USD') as Promise<string>
   ])
+  const courses = coursesResults as any[]
 
   const list: CourseSummary[] = courses.map((course) => ({
     id: course.id,

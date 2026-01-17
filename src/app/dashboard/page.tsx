@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSessionUser } from '@/lib/auth/guards'
-import { prisma } from '@/lib/db/prisma'
+import { sql, getFirst } from '@/lib/db/neon'
 import { Card } from '@/components/ui/card'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { CourseTable } from '@/components/dashboard/course-table'
@@ -33,15 +33,42 @@ export default async function DashboardPage() {
     redirect('/admin/dashboard')
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.id },
-    include: {
-      enrollments: {
-        include: { course: true },
-        orderBy: { updatedAt: 'desc' }
-      }
-    }
-  })
+  const userResults = await sql`
+    SELECT * FROM users 
+    WHERE id = ${session.id}
+    LIMIT 1
+  `
+  const user = getFirst(userResults as any[])
+
+  if (!user) {
+    redirect('/auth/login')
+  }
+
+  // جلب التسجيلات مع الدورات
+  const enrollmentsResults = await sql`
+    SELECT 
+      e.*,
+      json_build_object(
+        'id', c.id,
+        'title', c.title,
+        'category', c.category,
+        'description', c.description,
+        'hours', c.hours,
+        'price', c.price,
+        'level', c.level,
+        'thumbnail', c.thumbnail,
+        'meetingLink', c."meetingLink"
+      ) as course
+    FROM enrollments e
+    JOIN courses c ON e."courseId" = c.id
+    WHERE e."userId" = ${session.id}
+    ORDER BY e."updatedAt" DESC
+  `
+  
+  const enrollments = (enrollmentsResults as any[]).map((e: any) => ({
+    ...e,
+    course: e.course
+  }))
 
   if (!user) {
     redirect('/auth/login')

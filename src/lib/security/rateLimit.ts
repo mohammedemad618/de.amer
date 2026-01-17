@@ -1,4 +1,4 @@
-﻿import { prisma } from '@/lib/db/prisma'
+﻿import { sql, getFirst } from '@/lib/db/neon'
 
 export function getClientIp(request: Request) {
   const forwarded = request.headers.get('x-forwarded-for')
@@ -25,63 +25,61 @@ export function getClientIp(request: Request) {
  * يدعم multi-server environments
  */
 export async function rateLimit(ip: string, limit: number, windowMs: number) {
-  const now = Date.now()
-  const resetAt = new Date(now + windowMs)
+  const now = new Date()
+  const resetAt = new Date(Date.now() + windowMs)
 
   // تنظيف الـ entries المنتهية
-  await prisma.rateLimit.deleteMany({
-    where: {
-      resetAt: { lt: new Date(now) }
-    }
-  })
+  await sql`
+    DELETE FROM ratelimits 
+    WHERE "resetAt" < ${now}
+  `
 
   // البحث عن entry موجودة
-  const existing = await prisma.rateLimit.findUnique({
-    where: { ip }
-  })
+  const existingResults = await sql`
+    SELECT * FROM ratelimits 
+    WHERE ip = ${ip}
+    LIMIT 1
+  `
+  const existing = getFirst(existingResults)
 
   if (!existing) {
     // إنشاء entry جديدة
-    await prisma.rateLimit.create({
-      data: {
-        ip,
-        count: 1,
-        resetAt
-      }
-    })
-    return { allowed: true, remaining: limit - 1, resetAt: now + windowMs }
+    await sql`
+      INSERT INTO ratelimits (ip, count, "resetAt", "createdAt", "updatedAt")
+      VALUES (${ip}, 1, ${resetAt}, ${now}, ${now})
+    `
+    return { allowed: true, remaining: limit - 1, resetAt: Date.now() + windowMs }
   }
 
   // التحقق من انتهاء النافذة الزمنية
-  if (existing.resetAt < new Date(now)) {
+  if (new Date(existing.resetAt) < now) {
     // إعادة تعيين العد
-    await prisma.rateLimit.update({
-      where: { ip },
-      data: {
-        count: 1,
-        resetAt
-      }
-    })
-    return { allowed: true, remaining: limit - 1, resetAt: now + windowMs }
+    await sql`
+      UPDATE ratelimits 
+      SET count = 1, "resetAt" = ${resetAt}, "updatedAt" = ${now}
+      WHERE ip = ${ip}
+    `
+    return { allowed: true, remaining: limit - 1, resetAt: Date.now() + windowMs }
   }
 
   // التحقق من تجاوز الحد
   if (existing.count >= limit) {
-    return { allowed: false, remaining: 0, resetAt: existing.resetAt.getTime() }
+    return { allowed: false, remaining: 0, resetAt: new Date(existing.resetAt).getTime() }
   }
 
   // زيادة العد
-  const updated = await prisma.rateLimit.update({
-    where: { ip },
-    data: {
-      count: { increment: 1 }
-    }
-  })
+  const updatedResults = await sql`
+    UPDATE ratelimits 
+    SET count = count + 1, "updatedAt" = ${now}
+    WHERE ip = ${ip}
+    RETURNING *
+  `
+  const updated = getFirst(updatedResults)
 
   return {
     allowed: true,
     remaining: limit - updated.count,
-    resetAt: updated.resetAt.getTime()
+    resetAt: new Date(updated.resetAt).getTime()
   }
 }
 
