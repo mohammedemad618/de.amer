@@ -15,7 +15,7 @@ const serverEnvSchema = z.object({
 
 // Schema للتطوير: يسمح بإكمال JWT_SECRET تلقائياً لتسهيل التشغيل محلياً
 const serverEnvSchemaDev = z.object({
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required').optional(),
   JWT_SECRET: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 })
@@ -57,6 +57,15 @@ function validateServerEnv() {
     // في development/test: نسمح بـ JWT_SECRET مفقود/قصير ونولده تلقائياً
     const parsed = serverEnvSchemaDev.parse(process.env)
     
+    // التحقق من DATABASE_URL - في development نسمح بقيمته مفقودة
+    const databaseUrl = parsed.DATABASE_URL || process.env.DATABASE_URL
+    if (!databaseUrl) {
+      console.warn('⚠ DATABASE_URL is missing. Please add it to your .env file.')
+      // في development، نستخدم رابط افتراضي (لن يعمل لكن لن يكسر التطبيق)
+      // لكن في production سيتم إيقاف التطبيق
+      throw new Error('DATABASE_URL is required. Please add it to your .env file.')
+    }
+    
     // استخدام cache لضمان أن JWT_SECRET ثابت بين جميع الطلبات
     let jwtSecret: string
     if (parsed.JWT_SECRET && parsed.JWT_SECRET.length >= 32) {
@@ -76,7 +85,7 @@ function validateServerEnv() {
     }
 
     return {
-      DATABASE_URL: parsed.DATABASE_URL,
+      DATABASE_URL: databaseUrl,
       JWT_SECRET: jwtSecret,
       NODE_ENV: parsed.NODE_ENV
     } as z.infer<typeof serverEnvSchema>
