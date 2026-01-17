@@ -1,0 +1,701 @@
+✅ Cursor Mega Prompt — Medical Education Platform (Next.js + React + RTL + External Medical Flat Characters)
+
+You are Cursor acting as a Staff Full-Stack Engineer + UI/UX Lead + Security Engineer.
+Your task is to build a production-ready medical education platform using Next.js (App Router) + React + TypeScript + TailwindCSS with RTL Arabic support and a consistent Medical Infographic UI.
+
+This is a real platform and must be built with a scalable architecture, secure authentication, and a reusable design system.
+The platform is for:
+
+Owner (Doctor): Dr. Aamer Salman Orabi (الدكتور عامر سلمان عرابي)
+
+Title: PhD in Clinical Nutrition & Occupational Therapy
+
+Specialty: Clinical Nutrition + Occupational Therapy
+
+Experience: 20+ years
+
+Location: Syria – Latakia
+
+Phone: +00963985391696
+
+Purpose: Online specialized courses + medical consultations/requests
+
+0) Absolute Constraints (Must Follow)
+0.1 No Custom SVG Characters
+
+DO NOT draw or generate new medical characters in SVG manually.
+
+DO NOT create custom vector characters using code.
+
+The platform must use external modern illustration packs (medical flat characters) with clear licensing attribution.
+
+0.2 Use External Medical Flat Characters (Modern Sources)
+
+You MUST integrate 4 medical flat characters from external sources:
+
+Storyset by Freepik (medical/health flat illustrations)
+
+Icons8 Ouch! (medical illustrations)
+
+Blush (health/doctor collections)
+
+DrawKit (health packs if available)
+
+ManyPixels Gallery (health illustrations if available)
+
+Implementation Must Include:
+
+A folder: /public/illustrations/medical/
+
+An illustration registry file: src/content/illustrations.ts containing:
+
+id, title, sourceName, author, license, sourceUrl, assetPath, usageLocations
+
+A “Credits” section in Footer + About page:
+
+List each illustration pack, author, and license type.
+
+Characters Required (4):
+
+Doctor holding clipboard (single character)
+
+Nutrition professional (food / diet elements)
+
+Occupational therapy / rehab character
+
+Consultation scene (doctor + patient)
+
+Where to Use Them:
+
+Home hero
+
+Features section
+
+About page header
+
+Courses empty state OR Contact page banner
+
+IMPORTANT:
+
+If real assets are not provided in this workspace, create placeholder filenames but design the integration so that I can drop the assets later without changing code.
+Example placeholders:
+
+/public/illustrations/medical/doctor-clipboard.webp
+
+/public/illustrations/medical/nutritionist.webp
+
+/public/illustrations/medical/occupational-therapy.webp
+
+/public/illustrations/medical/consultation-scene.webp
+
+1) Tech Stack & Libraries
+1.1 Frontend
+
+Next.js 14+ (App Router)
+
+React 18+
+
+TypeScript
+
+TailwindCSS
+
+Framer Motion (animations)
+
+next/font (Google Fonts Cairo)
+
+React Hook Form + Zod (forms + validation)
+
+1.2 Backend/API
+
+Next.js Route Handlers (/app/api/*)
+
+JWT authentication (access + refresh)
+
+bcrypt password hashing
+
+Security middleware/headers (Helmet equivalent for Next.js using headers config)
+
+Rate limiting for auth endpoints
+
+Input validation (Zod)
+
+CSRF protection strategy (SameSite cookies + double submit OR CSRF token)
+
+1.3 Data Layer
+
+Use one of these:
+
+Option A (recommended): Prisma + SQLite for dev (easy), can move to Postgres later
+
+Option B: MongoDB (if you prefer)
+Choose Option A Prisma + SQLite by default unless impossible.
+
+2) Pages (Must Build Exactly 5 Main Pages)
+
+/ Home
+
+/about About the Doctor
+
+/courses Courses Catalog
+
+/contact Contact
+
+/dashboard Dashboard (Protected)
+
+Additionally allowed:
+
+/auth/login
+
+/auth/register
+
+/courses/[id] for course details page
+
+3) Features (Must Implement)
+3.1 Users System
+
+Registration (name, email, password)
+
+Login (email, password)
+
+JWT auth with refresh
+
+Protected dashboard route
+
+User profile snippet in dashboard
+
+Logout
+
+3.2 Courses System
+
+Courses list with filters:
+
+category
+
+price range (free/paid or numeric)
+
+hours range
+
+difficulty level
+
+Course card grid + details page
+
+Enrollment:
+
+enroll in a course
+
+show enrolled badge
+
+Progress tracking:
+
+progress percent stored per user per course
+
+update progress endpoint
+
+3.3 Certificates
+
+When progress reaches 100%:
+
+generate certificate PDF
+
+store URL/path
+
+allow download from dashboard
+
+PDF generation can be done via:
+
+pdf-lib or @react-pdf/renderer (choose one and implement)
+
+Certificate should include:
+
+Doctor name
+
+Student name
+
+Course title
+
+Completion date
+
+Unique certificate ID
+
+4) UI/UX Requirements (Medical Infographic Design System)
+4.1 Global Requirements
+
+RTL enabled everywhere
+
+Arabic is default language
+
+Responsive design across:
+
+Desktop 1920+
+
+Laptop 1024+
+
+Tablet 768+
+
+Mobile 320+
+
+4.2 Typography
+
+Use Cairo font (Google)
+
+Scale: xs → 6xl
+
+Weight: 300 → 800
+
+4.3 Colors (Must Use These Tokens)
+
+Primary: #6366F1
+
+Accent palette tokens:
+
+purple
+
+green
+
+orange
+
+red
+
+turquoise
+
+Neutral: gray 50–900
+Semantic tokens:
+
+success
+
+error
+
+warning
+
+info
+
+Implement tokens in:
+
+tailwind.config.ts as theme extensions
+
+also export tokens in src/theme/tokens.ts
+
+4.4 Spacing
+
+Base 8px scale:
+0,1,2,3,4,5,6,8,10,12,16,20,24,32
+
+Ensure consistent padding/margins.
+
+4.5 Component Library (Must Create)
+
+Create reusable components in src/components/ui/:
+
+Buttons:
+
+variants: primary, secondary, outline, ghost
+
+sizes: sm, md, lg
+
+Cards:
+
+variants: default, elevated, bordered, glass
+
+Inputs:
+
+states: default, error, disabled
+
+sizes: sm, md, lg
+
+Badges:
+
+5 types: neutral, success, error, warning, info
+
+Alerts:
+
+4 types: success, error, warning, info
+
+Also include:
+
+Navbar
+
+Footer (must include credits)
+
+SectionHeading
+
+CourseCard
+
+ProgressBar
+
+Modal (optional)
+
+Skeleton loaders
+
+5) Accessibility (WCAG 2.1 AA)
+
+Implement:
+
+Proper semantic HTML
+
+Keyboard navigation
+
+Focus visible indicators
+
+aria-labels where needed
+
+Contrast ratio ≥ 4.5:1
+
+Skip-to-content link
+
+Form error messages accessible
+
+6) Security & Performance (Must Implement)
+6.1 Security
+
+bcrypt hashing
+
+JWT access + refresh
+
+Rate limiting on login/register endpoints
+
+Secure headers:
+
+CSP (reasonable)
+
+X-Frame-Options
+
+X-Content-Type-Options
+
+Referrer-Policy
+
+Input validation & sanitization
+
+CSRF defense for mutation requests
+
+6.2 Performance
+
+Next/Image for all images
+
+WebP + lazy loading
+
+Code splitting
+
+caching for static pages
+
+Lighthouse target ≥ 90
+
+7) SEO Requirements
+
+Implement:
+
+Meta tags
+
+Open Graph
+
+JSON-LD structured data (Organization + Course)
+
+sitemap.xml + robots.txt
+
+canonical URLs
+
+8) Data Model (Prisma Option A)
+
+Create Prisma schema:
+
+User
+
+id (cuid)
+
+name
+
+email (unique)
+
+passwordHash
+
+role ("USER" | "ADMIN")
+
+createdAt
+
+Course
+
+id
+
+title
+
+category
+
+description
+
+objectives (string[])
+
+hours (int)
+
+price (float)
+
+level ("BEGINNER" | "INTERMEDIATE" | "ADVANCED")
+
+thumbnail (string)
+
+createdAt
+
+Enrollment
+
+id
+
+userId
+
+courseId
+
+status ("ACTIVE" | "COMPLETED")
+
+progressPercent (int 0..100)
+
+certificateId (nullable)
+
+certificateUrl (nullable)
+
+createdAt
+
+updatedAt
+
+Add seed script with 6 sample courses:
+
+3 nutrition
+
+3 occupational therapy
+
+9) Pages Content (Arabic Copy Required)
+9.1 Home page copy
+
+Hero headline in Arabic:
+“منصة تعليم طبي احترافية في التغذية العلاجية والعلاج الوظيفي”
+
+Subheadline:
+“دورات متخصصة وشهادات إتمام — بخبرة أكثر من 20 سنة”
+
+CTA buttons:
+“استعرض الدورات” → /courses
+“تواصل الآن” → /contact
+
+9.2 About page copy
+
+Must show doctor info:
+
+الاسم: الدكتور عامر سلمان عرابي
+
+التخصص: دكتوراه بعلوم التغذية العلاجية والعلاج الوظيفي
+
+الخبرة: أكثر من 20 سنة
+
+الاهتمام: تطوير أساليب العلاج التطبيقية للوصول للتشخيص والعلاج الصحيح
+
+الشهادات:
+
+بكالوريوس التغذية العلاجية والعلاج الوظيفي (الأكاديمية العربية – خريج جامعة القاهرة)
+
+ماجستير علوم التغذية العلاجية والتغذية الرياضية (كلية العلوم – أكاديمية نوتنغهام البريطانية)
+
+9.3 Contact page
+
+phone shown
+
+location shown
+
+contact form (name/email/message)
+
+WhatsApp button using phone number
+
+10) Folder Structure (Must Produce)
+
+Use this structure:
+
+src/
+
+app/
+
+layout.tsx
+
+page.tsx
+
+about/page.tsx
+
+courses/page.tsx
+
+courses/[id]/page.tsx
+
+contact/page.tsx
+
+dashboard/page.tsx
+
+auth/login/page.tsx
+
+auth/register/page.tsx
+
+api/
+
+auth/register/route.ts
+
+auth/login/route.ts
+
+auth/refresh/route.ts
+
+auth/logout/route.ts
+
+courses/route.ts
+
+courses/[id]/route.ts
+
+enroll/route.ts
+
+me/route.ts
+
+progress/route.ts
+
+certificates/[courseId]/route.ts
+
+components/
+
+ui/ (button, card, input, badge, alert)
+
+layout/ (navbar, footer)
+
+courses/ (CourseCard, Filters)
+
+dashboard/ (ProgressBar, CertificateCard)
+
+content/
+
+courses.ts (seed-like display content)
+
+illustrations.ts (registry + credits)
+
+lib/
+
+auth/ (jwt, cookies, guards)
+
+db/ (prisma client)
+
+security/ (rate limiter, headers)
+
+utils/
+
+theme/
+
+tokens.ts
+
+prisma/schema.prisma
+
+prisma/seed.ts
+
+public/illustrations/medical/*
+
+11) Implementation Details (Must Do)
+11.1 RTL
+
+Configure HTML dir="rtl"
+
+Use Tailwind RTL handling:
+
+either tailwindcss-rtl plugin
+
+or custom logical properties approach
+
+11.2 Auth Storage Strategy
+
+Use httpOnly cookies for refresh token + short-lived access token:
+
+Access token: in memory or secure cookie (choose one)
+
+Refresh token: httpOnly cookie
+Implement /api/auth/refresh to rotate refresh tokens.
+
+11.3 Protected Route
+
+/dashboard must redirect to /auth/login if unauthenticated.
+
+11.4 Rate Limiting
+
+Implement a simple rate limiter:
+
+Per IP
+
+Login/register: max 10 per 10 minutes
+Use an in-memory store for dev.
+
+11.5 Certificate PDF
+
+Implement certificate generator endpoint:
+GET /api/certificates/:courseId
+If user completed the course, return a PDF file response.
+
+12) External Medical Flat Illustrations Integration (Detailed)
+12.1 Create “Illustration” component
+
+<MedicalIllustration id="doctorClipboard" />:
+
+resolves correct filePath from registry
+
+uses Next/Image
+
+has alt text
+
+supports priority/lazy
+
+supports responsive sizes
+
+12.2 Credits block
+
+Create a Credits section component:
+
+reads registry
+
+groups by sourceName
+
+displays: source, author, license, sourceUrl
+
+Place Credits:
+
+Footer
+
+About page bottom
+
+13) Output You Must Provide
+
+You MUST output:
+
+All necessary code files with correct content
+
+Prisma schema + seed
+
+Ready-to-run setup instructions (README)
+
+Explanation of how to replace placeholder images with real external packs
+
+Security notes and how tokens/cookies work
+
+Accessibility checklist applied
+
+14) Final Verification Checklist
+
+Before you finish, verify and state explicitly:
+
+✅ 5 main pages exist
+
+✅ RTL works everywhere
+
+✅ component library done
+
+✅ authentication + refresh implemented
+
+✅ courses + enrollment + progress implemented
+
+✅ certificate generation implemented
+
+✅ medical flat characters integrated via external assets (no custom SVG)
+
+✅ credits displayed
+
+✅ security headers + rate limit present
+
+✅ SEO tags + sitemap/robots present
+
+Start Now
+
+Generate the full project with complete file contents.
+Do not skip critical files.
+Do not respond with only high-level steps—write actual code for the files.

@@ -1,0 +1,60 @@
+# إعدادات Netlify لمنصة التعليم الطبي
+# Medical Education Platform - Netlify Configuration
+
+[build]
+  # أمر البناء (يتضمن توليد Prisma Client)
+  command = "npm run build"
+  # Next.js يقوم بإنشاء output في .next
+  # Netlify plugin سيتعامل مع البناء تلقائياً
+
+# إعدادات البيئة للبناء
+[build.environment]
+  # إصدار Node.js
+  NODE_VERSION = "20"
+  # إصدار npm (اختياري)
+  NPM_VERSION = "10"
+  # تعيين NODE_ENV للبناء
+  NODE_ENV = "production"
+
+# إعدادات Next.js Plugin
+# هذا Plugin ضروري لبناء Next.js بشكل صحيح على Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# إعدادات Functions (API Routes)
+[functions]
+  # حجم الذاكرة للوظائف (MB)
+  # 256 MB للخطة المجانية (افتراضي)
+  # 1024 MB = 1 GB للخطط المدفوعة (يمكن زيادته)
+  memory = 256
+  # مهلة زمنية للوظائف (ثواني)
+  # الحد الأقصى: 26 ثانية للخطة المجانية
+  # يمكن زيادته في الخطط المدفوعة
+  timeout = 10
+  # إصدار Node.js للوظائف
+  node_bundler = "esbuild"
+
+# إعدادات Headers للأمان
+# يتم تطبيقها على جميع الطلبات
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# إعدادات Headers للصور والأصول الثابتة
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# إعدادات إعادة التوجيه (يتم التعامل معها تلقائياً بواسطة Next.js)
+# Netlify plugin سيتعامل مع Next.js routing
