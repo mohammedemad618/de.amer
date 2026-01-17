@@ -240,7 +240,7 @@ export default async function DashboardPage() {
           <h2 className='text-2xl font-bold text-neutral-900'>الدورات المسجلة</h2>
           <p className='text-sm text-neutral-600'>تابع تقدمك وأكمل الدروس المعلقة.</p>
         </div>
-        {user.enrollments.length === 0 ? (
+        {enrollments.length === 0 ? (
           <Card variant='bordered' className='p-8 text-center'>
             <p className='text-sm text-neutral-500'>لا توجد دورات مسجلة حالياً.</p>
           </Card>
