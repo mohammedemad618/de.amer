@@ -22,13 +22,14 @@
   package = "@netlify/plugin-nextjs"
 
 # إعدادات Functions (API Routes)
-# ملاحظة: memory يتم تعيينه لكل function بشكل منفصل أو عبر Netlify Dashboard
-# الحد الأقصى: 26 ثانية للخطة المجانية
+# ملاحظة: memory و timeout يتم تعيينهما افتراضياً أو عبر Netlify Dashboard
+# القيم الافتراضية:
+# - memory: 256 MB (مجاني) - 1024 MB (مدفوع)
+# - timeout: 10 ثواني (مجاني) - 26 ثانية كحد أقصى
+# - node_bundler: esbuild (افتراضي)
 [functions]
-  # مهلة زمنية للوظائف (ثواني)
-  timeout = 10
-  # إصدار Node.js للوظائف
-  node_bundler = "esbuild"
+  # إصدار Node.js للوظائف (اختياري)
+  # node_bundler = "esbuild"
 
 # إعدادات Headers للأمان
 # يتم تطبيقها على جميع الطلبات
