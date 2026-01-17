@@ -126,15 +126,14 @@ function validateServerEnv() {
 // Export validated environment variables (server-side only)
 export const env = validateServerEnv()
 
-// #region agent log
-if (typeof window === 'undefined') {
+// Debug log only in development
+if (typeof window === 'undefined' && process.env.NODE_ENV === 'development') {
   console.log('[DEBUG] env.JWT_SECRET initialized', { 
     hasSecret: !!env.JWT_SECRET, 
     secretLength: env.JWT_SECRET?.length,
     secretPrefix: env.JWT_SECRET?.substring(0, 8)
   })
 }
-// #endregion
 
 // Helper functions
 export function getBaseUrl(): string {

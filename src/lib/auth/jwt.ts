@@ -26,10 +26,7 @@ export function signRefreshToken(payload: Omit<AuthTokenPayload, 'type'>) {
   })
 }
 
-export function verifyToken(token: string) {
-    tokenPrefix: token?.substring(0, 20)
-  })
-  // #endregion
+export function verifyToken(token: string): AuthTokenPayload {
   return jwt.verify(token, JWT_SECRET) as AuthTokenPayload
 }
 
