@@ -14,9 +14,6 @@ const schema = z.object({
 })
 
 export async function POST(request: Request) {
-  // #region agent log
-  fetch('http://127.0.0.1:7252/ingest/1d56608a-1cd8-45d4-a9f1-37238db6f427',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/auth/login/route.ts:16',message:'POST handler started',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-  // #endregion
   try {
     const ip = getClientIp(request)
     // في بيئة التطوير، نستخدم حد أعلى لتسهيل الاختبار
@@ -25,16 +22,10 @@ export async function POST(request: Request) {
     const limit = await rateLimit(ip, maxAttempts, windowMs)
 
     if (!limit.allowed) {
-      // #region agent log
-      fetch('http://127.0.0.1:7252/ingest/1d56608a-1cd8-45d4-a9f1-37238db6f427',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/auth/login/route.ts:22',message:'rate limit exceeded',data:{ip},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       return NextResponse.json({ message: 'محاولات كثيرة، حاول لاحقاً.' }, { status: 429 })
     }
 
     const csrfValid = await verifyCsrf(request)
-    // #region agent log
-    fetch('http://127.0.0.1:7252/ingest/1d56608a-1cd8-45d4-a9f1-37238db6f427',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/auth/login/route.ts:25',message:'CSRF verification result',data:{csrfValid},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     if (!csrfValid) {
       return NextResponse.json(
         { message: 'رمز الحماية غير صالح. يرجى تحديث الصفحة والمحاولة مرة أخرى.' },

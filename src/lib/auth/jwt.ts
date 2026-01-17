@@ -15,12 +15,6 @@ export type AuthTokenPayload = {
 }
 
 export function signAccessToken(payload: Omit<AuthTokenPayload, 'type'>) {
-  // #region agent log
-  console.log('[DEBUG] signAccessToken: Using JWT_SECRET', { 
-    secretLength: JWT_SECRET?.length,
-    secretPrefix: JWT_SECRET?.substring(0, 8)
-  })
-  // #endregion
   return jwt.sign({ ...payload, type: 'access' }, JWT_SECRET, {
     expiresIn: ACCESS_EXPIRES_IN
   })
@@ -33,10 +27,6 @@ export function signRefreshToken(payload: Omit<AuthTokenPayload, 'type'>) {
 }
 
 export function verifyToken(token: string) {
-  // #region agent log
-  console.log('[DEBUG] verifyToken: Using JWT_SECRET', { 
-    secretLength: JWT_SECRET?.length,
-    secretPrefix: JWT_SECRET?.substring(0, 8),
     tokenPrefix: token?.substring(0, 20)
   })
   // #endregion

@@ -14,17 +14,8 @@ import { Stagger, StaggerItem } from '@/components/ui/stagger'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  // #region agent log
-  console.log('[DEBUG] DashboardPage: Starting, calling getSessionUser');
-  // #endregion
   const session = await getSessionUser()
-  // #region agent log
-  console.log('[DEBUG] DashboardPage: getSessionUser result', { hasSession: !!session, sessionId: session?.id?.substring(0, 8) });
-  // #endregion
   if (!session) {
-    // #region agent log
-    console.log('[DEBUG] DashboardPage: No session, redirecting to login');
-    // #endregion
     redirect('/auth/login')
   }
 
