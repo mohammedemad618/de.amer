@@ -34,10 +34,10 @@ export default async function AdminDashboardPage() {
     `
   ])
 
-  const totalCourses = parseInt((totalCoursesResult[0] as any)?.count || '0')
-  const totalUsers = parseInt((totalUsersResult[0] as any)?.count || '0')
-  const totalEnrollments = parseInt((totalEnrollmentsResult[0] as any)?.count || '0')
-  const recentCourses = (recentCoursesResults as any[]).map((course: any) => ({
+  const totalCourses = parseInt(String((totalCoursesResult as any)?.[0]?.count || '0'))
+  const totalUsers = parseInt(String((totalUsersResult as any)?.[0]?.count || '0'))
+  const totalEnrollments = parseInt(String((totalEnrollmentsResult as any)?.[0]?.count || '0'))
+  const recentCourses = (Array.isArray(recentCoursesResults) ? recentCoursesResults : []).map((course: any) => ({
     ...course,
     enrollments: Array.isArray(course.enrollments) ? course.enrollments.map((id: string) => ({ id })) : []
   }))

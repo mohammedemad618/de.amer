@@ -52,7 +52,7 @@ export async function PUT(
       WHERE id = ${id}
       LIMIT 1
     `
-    const existing = getFirst(existingResults)
+    const existing = getFirst(existingResults as any[])
     
     if (!existing) {
       return NextResponse.json({ message: 'الدورة غير موجودة.' }, { status: 404 })
