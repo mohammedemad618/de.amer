@@ -49,7 +49,7 @@ function validateServerEnv() {
   
   try {
     // قراءة DATABASE_URL مباشرة من process.env
-    const databaseUrl = process.env.DATABASE_URL
+    let databaseUrl = process.env.DATABASE_URL
     
     // أثناء البناء (NEXT_PHASE === 'phase-production-build')، قد لا يكون DATABASE_URL متاحاً
     // لكن في runtime (production بعد البناء)، DATABASE_URL مطلوب
@@ -74,7 +74,8 @@ function validateServerEnv() {
       // المستخدم يجب أن يضيف DATABASE_URL في Netlify Environment Variables
       console.warn('⚠ DATABASE_URL is missing during build. Please add it to Netlify Environment Variables.')
       // نستخدم قيمة placeholder (لن تعمل لكن لن تكسر البناء)
-      process.env.DATABASE_URL = 'mongodb://placeholder:27017/placeholder'
+      databaseUrl = 'mongodb://placeholder:27017/placeholder'
+      process.env.DATABASE_URL = databaseUrl
     }
     
     // في production runtime (ما عدا مرحلة build)، نطبق التحقق الصارم
@@ -103,7 +104,7 @@ function validateServerEnv() {
     }
 
     return {
-      DATABASE_URL: databaseUrl,
+      DATABASE_URL: databaseUrl || 'mongodb://placeholder:27017/placeholder',
       JWT_SECRET: jwtSecret,
       NODE_ENV: parsed.NODE_ENV || 'development'
     } as z.infer<typeof serverEnvSchema>
