@@ -52,6 +52,10 @@ export async function POST(request: Request) {
   `
   const user = getFirst(userResults)
 
+  if (!user) {
+    return NextResponse.json({ message: 'حدث خطأ أثناء إنشاء الحساب.' }, { status: 500 })
+  }
+
   const role = user.role === 'ADMIN' ? 'ADMIN' : 'USER'
   const accessToken = signAccessToken({ sub: user.id, email: user.email, role })
   const refreshToken = signRefreshToken({ sub: user.id, email: user.email, role })

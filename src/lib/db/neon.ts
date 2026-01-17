@@ -1,17 +1,20 @@
 import { neon } from '@neondatabase/serverless'
 
 // Neon SQL client - يستخدم DATABASE_URL أو NETLIFY_DATABASE_URL
-// في development، إذا كان connection string مفقوداً، نستخدم placeholder صحيح
+// في development أو build phase، إذا كان connection string مفقوداً، نستخدم placeholder صحيح
 function getConnectionString(): string {
   const connectionString = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL
   
   if (!connectionString) {
-    // في development، نستخدم placeholder صحيح للتنسيق (لن يعمل لكن لن يكسر التطبيق)
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('⚠ DATABASE_URL missing in development. Using placeholder. Please add your Neon PostgreSQL connection string to .env')
+    // في development أو build phase، نستخدم placeholder صحيح للتنسيق (لن يعمل لكن لن يكسر التطبيق)
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+    if (process.env.NODE_ENV === 'development' || isBuildPhase) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠ DATABASE_URL missing in development. Using placeholder. Please add your Neon PostgreSQL connection string to .env')
+      }
       return 'postgresql://placeholder:placeholder@placeholder:5432/placeholder?sslmode=require'
     }
-    // في production، نرمي خطأ
+    // في production runtime (بعد البناء)، نرمي خطأ
     throw new Error('DATABASE_URL or NETLIFY_DATABASE_URL is required. Please add it to your environment variables.')
   }
   

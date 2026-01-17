@@ -74,59 +74,59 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  const totalEnrollments = user.enrollments.length
-  const completedEnrollments = user.enrollments.filter((enrollment) => enrollment.status === 'COMPLETED').length
+  const totalEnrollments = enrollments.length
+  const completedEnrollments = enrollments.filter((e: any) => e.status === 'COMPLETED').length
   const activeEnrollments = Math.max(totalEnrollments - completedEnrollments, 0)
   const averageProgress = totalEnrollments
-    ? Math.round(user.enrollments.reduce((sum, enrollment) => sum + enrollment.progressPercent, 0) / totalEnrollments)
+    ? Math.round(enrollments.reduce((sum: number, e: any) => sum + (e.progressPercent || 0), 0) / totalEnrollments)
     : 0
 
   // Prepare timeline events
   const timelineEvents = [
-    ...user.enrollments.map((enrollment) => ({
+    ...enrollments.map((enrollment: any) => ({
       id: `enrollment-${enrollment.id}`,
       title: 'تسجيل في دورة جديدة',
-      description: `تم التسجيل في دورة "${enrollment.course.title}"`,
+      description: `تم التسجيل في دورة "${enrollment.course?.title || ''}"`,
       date: enrollment.createdAt,
       type: 'enrollment' as const,
-      courseTitle: enrollment.course.title
+      courseTitle: enrollment.course?.title || ''
     })),
-    ...user.enrollments
-      .filter((e) => e.progressPercent > 0 && e.progressPercent < 100)
-      .map((enrollment) => ({
+    ...enrollments
+      .filter((e: any) => e.progressPercent > 0 && e.progressPercent < 100)
+      .map((enrollment: any) => ({
         id: `progress-${enrollment.id}`,
         title: 'تقدم في الدورة',
-        description: `وصلت إلى ${enrollment.progressPercent}% في "${enrollment.course.title}"`,
+        description: `وصلت إلى ${enrollment.progressPercent}% في "${enrollment.course?.title || ''}"`,
         date: enrollment.updatedAt,
         type: 'progress' as const,
-        courseTitle: enrollment.course.title
+        courseTitle: enrollment.course?.title || ''
       })),
-    ...user.enrollments
-      .filter((e) => e.status === 'COMPLETED')
-      .map((enrollment) => ({
+    ...enrollments
+      .filter((e: any) => e.status === 'COMPLETED')
+      .map((enrollment: any) => ({
         id: `completion-${enrollment.id}`,
         title: 'إتمام دورة',
-        description: `أكملت دورة "${enrollment.course.title}" بنجاح!`,
+        description: `أكملت دورة "${enrollment.course?.title || ''}" بنجاح!`,
         date: enrollment.updatedAt,
         type: 'completion' as const,
-        courseTitle: enrollment.course.title
+        courseTitle: enrollment.course?.title || ''
       })),
-    ...user.enrollments
-      .filter((e) => e.certificateId)
-      .map((enrollment) => ({
+    ...enrollments
+      .filter((e: any) => e.certificateId)
+      .map((enrollment: any) => ({
         id: `certificate-${enrollment.id}`,
         title: 'حصول على شهادة',
-        description: `حصلت على شهادة إتمام "${enrollment.course.title}"`,
+        description: `حصلت على شهادة إتمام "${enrollment.course?.title || ''}"`,
         date: enrollment.updatedAt,
         type: 'certificate' as const,
-        courseTitle: enrollment.course.title
+        courseTitle: enrollment.course?.title || ''
       }))
   ]
 
-  const certificates = user.enrollments
-    .filter((enrollment) => enrollment.certificateId && enrollment.certificateUrl)
-    .map((enrollment) => ({
-      courseTitle: enrollment.course.title,
+  const certificates = enrollments
+    .filter((enrollment: any) => enrollment.certificateId && enrollment.certificateUrl)
+    .map((enrollment: any) => ({
+      courseTitle: enrollment.course?.title || '',
       certificateId: enrollment.certificateId ?? '',
       certificateUrl: enrollment.certificateUrl ?? '',
       completedAt: enrollment.updatedAt
@@ -245,7 +245,7 @@ export default async function DashboardPage() {
             <p className='text-sm text-neutral-500'>لا توجد دورات مسجلة حالياً.</p>
           </Card>
         ) : (
-          <CourseTable enrollments={user.enrollments} />
+          <CourseTable enrollments={enrollments} />
         )}
       </section>
 

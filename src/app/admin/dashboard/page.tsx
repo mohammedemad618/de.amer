@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/guards'
-import { prisma } from '@/lib/db/prisma'
+import { sql } from '@/lib/db/neon'
 import { Card } from '@/components/ui/card'
 import { StatCard } from '@/components/dashboard/stat-card'
 import Link from 'next/link'

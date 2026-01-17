@@ -76,6 +76,11 @@ export async function rateLimit(ip: string, limit: number, windowMs: number) {
   `
   const updated = getFirst(updatedResults)
 
+  if (!updated) {
+    // في حالة فشل التحديث، نرجع قيمة آمنة
+    return { allowed: true, remaining: limit - 1, resetAt: Date.now() + windowMs }
+  }
+
   return {
     allowed: true,
     remaining: limit - updated.count,

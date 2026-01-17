@@ -46,29 +46,34 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ co
       WHERE id = ${enrollment.id}
       RETURNING *
     `
-    enrollment = getFirst(updatedResults)
+    const updated = getFirst(updatedResults)
     
-    // إعادة جلب البيانات مع العلاقات
-    const fullEnrollmentResults = await sql`
-      SELECT 
-        e.*,
-        json_build_object(
-          'id', c.id,
-          'title', c.title,
-          'category', c.category
-        ) as course,
-        json_build_object(
-          'id', u.id,
-          'name', u.name,
-          'email', u.email
-        ) as user
-      FROM enrollments e
-      JOIN courses c ON e."courseId" = c.id
-      JOIN users u ON e."userId" = u.id
-      WHERE e.id = ${enrollment.id}
-      LIMIT 1
-    `
-    enrollment = getFirst(fullEnrollmentResults)
+    if (updated) {
+      // إعادة جلب البيانات مع العلاقات
+      const fullEnrollmentResults = await sql`
+        SELECT 
+          e.*,
+          json_build_object(
+            'id', c.id,
+            'title', c.title,
+            'category', c.category
+          ) as course,
+          json_build_object(
+            'id', u.id,
+            'name', u.name,
+            'email', u.email
+          ) as user
+        FROM enrollments e
+        JOIN courses c ON e."courseId" = c.id
+        JOIN users u ON e."userId" = u.id
+        WHERE e.id = ${updated.id}
+        LIMIT 1
+      `
+      const fullEnrollment = getFirst(fullEnrollmentResults)
+      if (fullEnrollment) {
+        enrollment = fullEnrollment
+      }
+    }
   }
 
   const pdfDoc = await PDFDocument.create()
