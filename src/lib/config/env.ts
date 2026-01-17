@@ -48,20 +48,38 @@ function validateServerEnv() {
   }
   
   try {
-    // في production نطبق التحقق الصارم دائماً (ما عدا مرحلة build)
-    // Next.js يضبط NODE_ENV=production أثناء build، لذلك نسمح بإنشاء secret مؤقت فقط أثناء build
-    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build') {
-      return serverEnvSchema.parse(process.env)
-    }
-
-    // في development/test: نسمح بـ JWT_SECRET مفقود/قصير ونولده تلقائياً
-    // قراءة DATABASE_URL مباشرة من process.env (قد لا يكون في parsed إذا كان optional)
+    // قراءة DATABASE_URL مباشرة من process.env
     const databaseUrl = process.env.DATABASE_URL
     
-    if (!databaseUrl) {
-      const errorMsg = 'DATABASE_URL is required. Please add it to your .env file.'
-      console.error(`❌ ${errorMsg}`)
-      throw new Error(errorMsg)
+    // أثناء البناء (NEXT_PHASE === 'phase-production-build')، قد لا يكون DATABASE_URL متاحاً
+    // لكن في runtime (production بعد البناء)، DATABASE_URL مطلوب
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+    
+    if (!databaseUrl && !isBuildPhase) {
+      // في runtime (وليس أثناء البناء)، DATABASE_URL مطلوب
+      if (process.env.NODE_ENV === 'production') {
+        const errorMsg = 'DATABASE_URL is required. Please add it to your environment variables in Netlify.'
+        console.error(`❌ ${errorMsg}`)
+        throw new Error(errorMsg)
+      } else {
+        // في development، نعطي تحذير فقط
+        const errorMsg = 'DATABASE_URL is required. Please add it to your .env file.'
+        console.error(`❌ ${errorMsg}`)
+        throw new Error(errorMsg)
+      }
+    }
+    
+    if (!databaseUrl && isBuildPhase) {
+      // أثناء البناء، نستخدم قيمة افتراضية (لن تعمل لكن لن تكسر البناء)
+      // المستخدم يجب أن يضيف DATABASE_URL في Netlify Environment Variables
+      console.warn('⚠ DATABASE_URL is missing during build. Please add it to Netlify Environment Variables.')
+      // نستخدم قيمة placeholder (لن تعمل لكن لن تكسر البناء)
+      process.env.DATABASE_URL = 'mongodb://placeholder:27017/placeholder'
+    }
+    
+    // في production runtime (ما عدا مرحلة build)، نطبق التحقق الصارم
+    if (process.env.NODE_ENV === 'production' && !isBuildPhase) {
+      return serverEnvSchema.parse(process.env)
     }
     
     const parsed = serverEnvSchemaDev.parse(process.env)
