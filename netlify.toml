@@ -22,14 +22,10 @@
   package = "@netlify/plugin-nextjs"
 
 # إعدادات Functions (API Routes)
+# ملاحظة: memory يتم تعيينه لكل function بشكل منفصل أو عبر Netlify Dashboard
+# الحد الأقصى: 26 ثانية للخطة المجانية
 [functions]
-  # حجم الذاكرة للوظائف (MB)
-  # 256 MB للخطة المجانية (افتراضي)
-  # 1024 MB = 1 GB للخطط المدفوعة (يمكن زيادته)
-  memory = 256
   # مهلة زمنية للوظائف (ثواني)
-  # الحد الأقصى: 26 ثانية للخطة المجانية
-  # يمكن زيادته في الخطط المدفوعة
   timeout = 10
   # إصدار Node.js للوظائف
   node_bundler = "esbuild"
