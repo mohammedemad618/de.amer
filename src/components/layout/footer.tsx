@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getSettings } from '@/lib/settings'
+import { Credits } from './credits'
 
 export async function Footer() {
   const settings = await getSettings([
@@ -110,6 +111,7 @@ export async function Footer() {
         </div>
         <p className='text-xs text-neutral-500'>© {new Date().getFullYear()} {siteName}</p>
       </div>
+      <Credits />
     </footer>
   )
 }
