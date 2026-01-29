@@ -1,11 +1,11 @@
-﻿import * as React from 'react'
+import * as React from 'react'
 import { cn } from '@/lib/utils/cn'
 
 type InputSize = 'sm' | 'md' | 'lg'
 
 type InputState = 'default' | 'error' | 'disabled'
 
-type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   size?: InputSize
   state?: InputState
 }
@@ -22,21 +22,25 @@ const stateClasses: Record<InputState, string> = {
   disabled: 'border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed'
 }
 
-export function Input({ className, size = 'md', state = 'default', disabled, ...props }: InputProps) {
-  const computedState = disabled ? 'disabled' : state
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, size = 'md', state = 'default', disabled, ...props }, ref) => {
+    const computedState = disabled ? 'disabled' : state
 
-  return (
-    <input
-      className={cn(
-        'w-full rounded-xl border bg-white text-neutral-900 transition focus-ring',
-        sizeClasses[size],
-        stateClasses[computedState],
-        className
-      )}
-      disabled={disabled}
-      {...props}
-    />
-  )
-}
+    return (
+      <input
+        ref={ref}
+        className={cn(
+          'w-full rounded-xl border bg-white text-neutral-900 transition focus-ring',
+          sizeClasses[size],
+          stateClasses[computedState],
+          className
+        )}
+        disabled={disabled}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = 'Input'
 
-
+export { Input }
