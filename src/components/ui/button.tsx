@@ -1,6 +1,7 @@
 ﻿import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cn } from '@/lib/utils/cn'
+import { Spinner } from './spinner'
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'success'
 
@@ -10,6 +11,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant
   size?: ButtonSize
   asChild?: boolean
+  isLoading?: boolean
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -26,7 +28,16 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: 'px-6 py-3 text-lg'
 }
 
-export function Button({ className, variant = 'primary', size = 'md', asChild = false, ...props }: ButtonProps) {
+export function Button({
+  className,
+  variant = 'primary',
+  size = 'md',
+  asChild = false,
+  isLoading = false,
+  children,
+  disabled,
+  ...props
+}: ButtonProps) {
   const Component = asChild ? Slot : 'button'
   return (
     <Component
@@ -36,8 +47,12 @@ export function Button({ className, variant = 'primary', size = 'md', asChild = 
         sizeClasses[size],
         className
       )}
+      disabled={disabled || isLoading}
       {...props}
-    />
+    >
+      {isLoading && !asChild && <Spinner className='me-2 h-4 w-4' />}
+      {children}
+    </Component>
   )
 }
 
