@@ -1,0 +1,3 @@
+## 2024-05-23 - Authentication Form Button States
+**Learning:** The authentication forms (Login/Register) initiate a CSRF token fetch immediately on mount. This causes the submit button to be disabled initially, independent of user input or submission status. This creates a "race condition" for automated testing or users who type very fast, as the button might be disabled when they try to click.
+**Action:** When testing or modifying auth forms, always account for this initial "CSRF loading" state. Ensure loading indicators clearly distinguish between "initializing form" and "submitting data" to avoid user confusion.
