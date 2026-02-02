@@ -1,6 +1,7 @@
-﻿import * as React from 'react'
+import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cn } from '@/lib/utils/cn'
+import { Spinner } from './spinner'
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'success'
 
@@ -10,6 +11,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant
   size?: ButtonSize
   asChild?: boolean
+  isLoading?: boolean
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -26,19 +28,28 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: 'px-6 py-3 text-lg'
 }
 
-export function Button({ className, variant = 'primary', size = 'md', asChild = false, ...props }: ButtonProps) {
-  const Component = asChild ? Slot : 'button'
-  return (
-    <Component
-      className={cn(
-        'inline-flex items-center justify-center rounded-xl font-semibold transition focus-ring disabled:cursor-not-allowed disabled:opacity-50',
-        variantClasses[variant],
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    />
-  )
-}
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = 'primary', size = 'md', asChild = false, isLoading = false, children, disabled, ...props }, ref) => {
+    const Component = asChild ? Slot : 'button'
+    const isDisabled = disabled || isLoading
 
-
+    return (
+      <Component
+        ref={ref}
+        disabled={isDisabled}
+        aria-busy={isLoading ? "true" : undefined}
+        className={cn(
+          'inline-flex items-center justify-center rounded-xl font-semibold transition focus-ring disabled:cursor-not-allowed disabled:opacity-50',
+          variantClasses[variant],
+          sizeClasses[size],
+          className
+        )}
+        {...props}
+      >
+        {isLoading && !asChild ? <Spinner className="me-2" /> : null}
+        {children}
+      </Component>
+    )
+  }
+)
+Button.displayName = 'Button'
