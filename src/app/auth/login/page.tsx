@@ -192,12 +192,12 @@ export default function LoginPage() {
                   {serverError}
                 </p>
               ) : null}
-              <Button type='submit' disabled={isSubmitting || csrfLoading || !csrfToken}>
-                {csrfLoading
-                  ? 'جاري التحميل...'
-                  : isSubmitting
-                    ? 'جارٍ تسجيل الدخول...'
-                    : 'تسجيل الدخول'}
+              <Button
+                type='submit'
+                disabled={!csrfToken}
+                isLoading={isSubmitting || csrfLoading}
+              >
+                تسجيل الدخول
               </Button>
             </form>
           </Card>
