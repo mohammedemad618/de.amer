@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { MedicalIllustration } from '@/components/illustrations/medical-illustration'
 import { Reveal } from '@/components/ui/reveal'
 
@@ -141,8 +142,7 @@ export default function RegisterPage() {
               </label>
               <label className='space-y-2 text-sm font-semibold text-neutral-700'>
                 كلمة المرور
-                <Input
-                  type='password'
+                <PasswordInput
                   placeholder='••••••••'
                   {...register('password')}
                   state={errors.password ? 'error' : 'default'}
