@@ -160,8 +160,8 @@ export default function RegisterPage() {
                   {serverError}
                 </p>
               ) : null}
-              <Button type='submit' disabled={isSubmitting}>
-                {isSubmitting ? 'جارٍ إنشاء الحساب...' : 'إنشاء الحساب'}
+              <Button type='submit' isLoading={isSubmitting} loadingText="جارٍ إنشاء الحساب...">
+                إنشاء الحساب
               </Button>
             </form>
           </Card>
