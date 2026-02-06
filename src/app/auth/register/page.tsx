@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { MedicalIllustration } from '@/components/illustrations/medical-illustration'
 import { Reveal } from '@/components/ui/reveal'
 
@@ -108,9 +109,12 @@ export default function RegisterPage() {
               <p className='text-sm text-neutral-600'>املأ بياناتك لإنشاء حساب جديد.</p>
             </div>
             <form className='space-y-4' onSubmit={handleSubmit(onSubmit)}>
-              <label className='space-y-2 text-sm font-semibold text-neutral-700'>
-                الاسم الكامل
+              <div className='space-y-2'>
+                <label htmlFor='name' className='text-sm font-semibold text-neutral-700'>
+                  الاسم الكامل
+                </label>
                 <Input
+                  id='name'
                   placeholder='اكتب اسمك'
                   {...register('name')}
                   state={errors.name ? 'error' : 'default'}
@@ -122,10 +126,13 @@ export default function RegisterPage() {
                     {errors.name.message}
                   </span>
                 ) : null}
-              </label>
-              <label className='space-y-2 text-sm font-semibold text-neutral-700'>
-                البريد الإلكتروني
+              </div>
+              <div className='space-y-2'>
+                <label htmlFor='email' className='text-sm font-semibold text-neutral-700'>
+                  البريد الإلكتروني
+                </label>
                 <Input
+                  id='email'
                   type='email'
                   placeholder='name@example.com'
                   {...register('email')}
@@ -138,11 +145,13 @@ export default function RegisterPage() {
                     {errors.email.message}
                   </span>
                 ) : null}
-              </label>
-              <label className='space-y-2 text-sm font-semibold text-neutral-700'>
-                كلمة المرور
-                <Input
-                  type='password'
+              </div>
+              <div className='space-y-2'>
+                <label htmlFor='password' className='text-sm font-semibold text-neutral-700'>
+                  كلمة المرور
+                </label>
+                <PasswordInput
+                  id='password'
                   placeholder='••••••••'
                   {...register('password')}
                   state={errors.password ? 'error' : 'default'}
@@ -154,7 +163,7 @@ export default function RegisterPage() {
                     {errors.password.message}
                   </span>
                 ) : null}
-              </label>
+              </div>
               {serverError ? (
                 <p className='text-sm text-error' role='alert'>
                   {serverError}
