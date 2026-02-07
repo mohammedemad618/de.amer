@@ -5,7 +5,7 @@ type InputSize = 'sm' | 'md' | 'lg'
 
 type InputState = 'default' | 'error' | 'disabled'
 
-type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
+export type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   size?: InputSize
   state?: InputState
 }
