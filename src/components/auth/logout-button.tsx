@@ -65,7 +65,7 @@ export function LogoutButton({ className, size = 'sm', variant = 'outline', show
 
   return (
     <div className={cn('space-y-2', className)}>
-      <Button onClick={handleLogout} size={size} variant={variant} disabled={loading}>
+      <Button onClick={handleLogout} size={size} variant={variant} isLoading={loading}>
         {loading ? 'جارٍ تسجيل الخروج...' : 'تسجيل الخروج'}
       </Button>
       {showError && error ? (
