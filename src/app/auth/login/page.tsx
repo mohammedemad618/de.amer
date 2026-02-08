@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { MedicalIllustration } from '@/components/illustrations/medical-illustration'
 import { Reveal } from '@/components/ui/reveal'
 
@@ -155,9 +156,12 @@ export default function LoginPage() {
               <p className='text-sm text-neutral-600'>أدخل بريدك وكلمة المرور للمتابعة.</p>
             </div>
             <form className='space-y-4' onSubmit={handleSubmit(onSubmit)}>
-              <label className='space-y-2 text-sm font-semibold text-neutral-700'>
-                البريد الإلكتروني
+              <div className='space-y-2'>
+                <label htmlFor='email' className='text-sm font-semibold text-neutral-700'>
+                  البريد الإلكتروني
+                </label>
                 <Input
+                  id='email'
                   type='email'
                   placeholder='name@example.com'
                   {...register('email')}
@@ -170,11 +174,13 @@ export default function LoginPage() {
                     {errors.email.message}
                   </span>
                 ) : null}
-              </label>
-              <label className='space-y-2 text-sm font-semibold text-neutral-700'>
-                كلمة المرور
-                <Input
-                  type='password'
+              </div>
+              <div className='space-y-2'>
+                <label htmlFor='password' className='text-sm font-semibold text-neutral-700'>
+                  كلمة المرور
+                </label>
+                <PasswordInput
+                  id='password'
                   placeholder='••••••••'
                   {...register('password')}
                   state={errors.password ? 'error' : 'default'}
@@ -186,7 +192,7 @@ export default function LoginPage() {
                     {errors.password.message}
                   </span>
                 ) : null}
-              </label>
+              </div>
               {serverError ? (
                 <p className='text-sm text-error' role='alert'>
                   {serverError}
